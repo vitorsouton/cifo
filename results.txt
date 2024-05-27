@@ -1,6 +1,6 @@
 * KMeans:
     - Number of centroids: 4
-    - Inertia: 24506.845702827795
+    - Inertia: 24506.49
     - Cluster distribution: 
         -> 0    0.260125
         -> 1    0.272875
