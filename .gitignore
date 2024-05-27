@@ -1,3 +1,4 @@
 .env
 .python-version
 raw_data/
+.ipynb_checkpoints/
