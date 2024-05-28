@@ -2,10 +2,15 @@
 Charles Darwin had his well-deserved share of praising during the course.
 This module is dedicated to Gregor Mendel (https://en.wikipedia.org/wiki/Gregor_Mendel), the father of genetics!
 '''
+import os
+
+import pandas as pd
+
 from operator import attrgetter
-from random import choice, sample, random
+from random import choice, sample, random, uniform
 from copy import copy
 from termcolor import cprint
+
 
 class Individual:
     def __init__(self, representation=None, size=None, valid_set=None, replacement=True):
@@ -14,13 +19,19 @@ class Individual:
                 self.representation = [choice(valid_set) for _ in range(size)]
             else:
                 self.representation = sample(valid_set, size)
+        self.representation = representation
 
         self.fitness = self.get_fitness()
-
+        self.data = self.get_data()
 
     def get_fitness(self):
         # TODO: Implement KMeans' Inertia
         pass
+
+    def get_data(self):
+        path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
+        data = pd.read_csv(path)
+        return data
 
     def __repr__(self):
         return f'Fitness: {self.fitness}'
@@ -98,3 +109,14 @@ class Population:
 
     def __getitem__(self, idx):
         return self.individuals[idx]
+
+
+if __name__ == '__main__':
+    idv = Individual(
+        # 4 centroids of 7 dimensions
+        # [[7], [7], [7], [7]]
+        representation=[[uniform(0, 1) for _ in range(7)] for _ in range(4)]
+    )
+
+    print(idv.representation)
+    print(idv.data.columns)
