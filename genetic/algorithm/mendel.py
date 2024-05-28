@@ -21,8 +21,8 @@ class Individual:
                 self.representation = sample(valid_set, size)
         self.representation = representation
 
-        self.fitness = self.get_fitness()
         self.data = self.get_data()
+        self.fitness = self.get_fitness()
 
     def get_fitness(self):
         # TODO: Implement KMeans' Inertia
