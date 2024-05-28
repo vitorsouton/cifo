@@ -5,33 +5,30 @@ This module is dedicated to Gregor Mendel (https://en.wikipedia.org/wiki/Gregor_
 import os
 
 import pandas as pd
+import numpy as np
 
 from operator import attrgetter
 from random import choice, sample, random, uniform
 from copy import copy
 from termcolor import cprint
+from sklearn.metrics import DistanceMetric
 
 
 class Individual:
-    def __init__(self, representation=None, size=None, valid_set=None, replacement=True):
-        if representation is None:
-            if replacement:
-                self.representation = [choice(valid_set) for _ in range(size)]
-            else:
-                self.representation = sample(valid_set, size)
-        self.representation = representation
-
-        self.data = self.get_data()
+    def __init__(self, data, n_dim=7, n_centroids=4):
+        self.representation = np.array([np.random.uniform(0, 1, n_dim) for _ in range(n_centroids)])
+        self.labels = None
+        self.data = data
         self.fitness = self.get_fitness()
 
     def get_fitness(self):
-        # TODO: Implement KMeans' Inertia
-        pass
+        dist = DistanceMetric.get_metric('minkowski')
+        distances = dist.pairwise(self.data, self.representation) # To all centroids
+        self.labels = np.argmin(distances, axis=1) # Labels
+        # Distance to label centroids
+        fitness = np.min(distances, axis=1).sum() # INERTIA!
+        return fitness
 
-    def get_data(self):
-        path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
-        data = pd.read_csv(path)
-        return data
 
     def __repr__(self):
         return f'Fitness: {self.fitness}'
@@ -48,18 +45,21 @@ class Individual:
 
 class Population:
     def __init__(self, size, optim, individual_type, **kwargs):
-        self.size = size
         self.optim = optim
         self.individual_type = individual_type
         self.individuals = []
+        self.data = self.get_data()
+
 
         for _ in range(size):
             self.individuals.append(
                 self.individual_type(
-                    size=kwargs['sol_size'],
-                    valid_set=kwargs['valid_set']
+                    n_dim=kwargs['n_dim'],
+                    n_centroids=kwargs['n_centroids'],
+                    data=kwargs['data']
                 )
             )
+
 
     def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism):
         if self.optim == 'max':
@@ -104,6 +104,11 @@ class Population:
 
         cprint(f'Best solution found: {max(self, key=attrgetter("fitness"))}', 'green')
 
+    def get_data(self):
+        path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
+        data = pd.read_csv(path)
+        return data
+
     def __len__(self):
         return len(self.individuals)
 
@@ -112,11 +117,15 @@ class Population:
 
 
 if __name__ == '__main__':
+    path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
+    data = pd.read_csv(path)
+
     idv = Individual(
         # 4 centroids of 7 dimensions
         # [[7], [7], [7], [7]]
-        representation=[[uniform(0, 1) for _ in range(7)] for _ in range(4)]
+        data=data,
+        n_centroids=4,
+        n_dim=7
     )
 
-    print(idv.representation)
-    print(idv.data.columns)
+    print(idv.fitness)
