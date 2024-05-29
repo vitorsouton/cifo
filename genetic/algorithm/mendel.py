@@ -12,12 +12,19 @@ from random import random
 from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
-from ..selection import tournament_sel
+from ..selection.selection import tournament_sel
+from ..crossover.crossover import single_coordinate_crossover
+from ..mutation.mutation import coordinate_mutation
+from time import time
 
 
 class Individual:
-    def __init__(self, data, n_dim=7, n_centroids=4):
-        self.representation = np.array([np.random.uniform(0, 1, n_dim) for _ in range(n_centroids)])
+    def __init__(self, data, n_dim=7, n_centroids=4, representation=None):
+        if representation is None:
+            self.representation = np.array([np.random.uniform(0, 1, n_dim) for _ in range(n_centroids)])
+        else:
+            self.representation = representation
+
         self.labels = None
         self.data = data
         self.fitness = self.get_fitness()
@@ -46,13 +53,19 @@ class Individual:
     def __setitem__(self, idx, value):
         self.representation[idx] = value
 
+    def __lt__(self, other):
+        return self.fitness < other.fitness
+
+
 
 class Population:
     def __init__(self, size, optim, individual_type, **kwargs):
+        self.size = size
         self.optim = optim
         self.individual_type = individual_type
         self.individuals = []
         self.data = self.get_data()
+        self.loop_time = []
 
 
         for _ in range(size):
@@ -60,20 +73,32 @@ class Population:
                 self.individual_type(
                     n_dim=kwargs['n_dim'],
                     n_centroids=kwargs['n_centroids'],
-                    data=kwargs['data']
+                    data=self.data
                 )
             )
 
+    def log_time(func):
+        def wrapper(self, *args, **kwargs):
+            start_time = time()
+            func(self, *args, **kwargs)
+            end_time = time() - start_time
+            print(f'Total time of execution: {end_time:.2f} seconds.')
+            print(f'Average time per generation: {np.mean(self.loop_time): .2f} seconds.')
+        return wrapper
 
-    def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism):
+    @log_time
+    def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism, stopping_criteria):
         if self.optim == 'max':
             best = max(self.individuals, key=attrgetter('fitness'))
         elif self.optim == 'min':
             best = min(self.individuals, key=attrgetter('fitness'))
 
         print(f'Initial fitness: {best}')
+        early_stopping = stopping_criteria # Patience for breaking condition
 
-        for _ in range(generations):
+        for g in range(generations):
+            loop_time_start = time()
+
             new_pop = []
 
             if elitism:
@@ -100,18 +125,36 @@ class Population:
                 if random() < mut_prob:
                     off2 = mutate(off2)
 
-                new_pop.append(self.individual_type(representation=off1))
+                new_pop.append(self.individual_type(representation=off1, data=self.data))
                 if len(new_pop) < self.size:
-                    new_pop.append(self.individual_type(representation=off2))
+                    new_pop.append(self.individual_type(representation=off2, data=self.data))
 
             self.individuals = new_pop
 
-        cprint(f'Best solution found: {max(self, key=attrgetter("fitness"))}', 'green')
+            best_ind_generation = min(self, key=attrgetter("fitness"))
+            if best_ind_generation < best:
+                best = best_ind_generation
+                early_stopping = stopping_criteria
+            else:
+                early_stopping -= 1
+
+            loop_time_end = time() - loop_time_start
+            self.loop_time.append(loop_time_end)
+
+            if early_stopping == 0:
+                cprint(f'Stop improving after {g} generations.', 'red')
+                break
+
+        cprint(f'Best solution found: {min(self, key=attrgetter("fitness"))}', 'green')
 
     def get_data(self):
         path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
         data = pd.read_csv(path)
         return data
+
+
+    def __repr__(self):
+        return f'Population of {type(self.individuals[0])}'
 
     def __len__(self):
         return len(self.individuals)
@@ -121,16 +164,14 @@ class Population:
 
 
 if __name__ == '__main__':
-    path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
-    data = pd.read_csv(path)
-
-    idv = Individual(
-        # 4 centroids of 7 dimensions
-        # [[7], [7], [7], [7]]
-        data=data,
-        n_centroids=4,
-        n_dim=7
+    pop = Population(
+        size=100, optim='min', individual_type=Individual,
+        n_dim=7, n_centroids=4
     )
 
-    print(idv.representation)
-    print(idv)
+    pop.evolve(
+        generations=100, xo_prob=0.9,
+        mut_prob=0.05, selection=tournament_sel,
+        xo=single_coordinate_crossover, mutate=coordinate_mutation,
+        elitism=True, stopping_criteria=10
+    )
