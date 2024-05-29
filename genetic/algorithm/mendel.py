@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from operator import attrgetter
-from random import choice, sample, random, uniform
+from random import random
 from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
@@ -28,6 +28,9 @@ class Individual:
         # Distance to label centroids
         fitness = np.min(distances, axis=1).sum() # INERTIA!
         return fitness
+
+        #TODO: If we have time, try to implement different fitness functions
+        #      to try and make GA better than KNN
 
 
     def __repr__(self):
@@ -128,4 +131,5 @@ if __name__ == '__main__':
         n_dim=7
     )
 
-    print(idv.fitness)
+    print(idv.representation)
+    print(idv)
