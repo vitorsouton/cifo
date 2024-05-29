@@ -2,3 +2,4 @@
 .python-version
 raw_data/
 .ipynb_checkpoints/
+__pycache__/

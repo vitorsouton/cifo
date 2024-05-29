@@ -12,6 +12,7 @@ from random import random
 from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
+from ..selection import tournament_sel
 
 
 class Individual:
