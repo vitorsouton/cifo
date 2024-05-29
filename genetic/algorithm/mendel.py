@@ -132,4 +132,4 @@ if __name__ == '__main__':
     )
 
     print(idv.representation)
-    print(idv.fitness)
+    print(idv)
