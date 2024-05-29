@@ -1,7 +1,10 @@
-* KMeans:
+* KMeans with k-means++ initialization:
     - Number of centroids: 4
-    - Inertia: 24506.49
-    - Cluster distribution: 
+    - Inertia:
+        -> Best:
+        -> Mean:
+        -> Std:
+    - Cluster distribution:
         -> 0    0.260125
         -> 1    0.272875
         -> 2    0.241964
@@ -13,5 +16,26 @@
         -> [0.56921245, 0.61023709, 0.55525329, 0.36677321, 0.12755378, 0.51232961, 0.6765232 ]
     - Total time of execution: 122.50 seconds
     - Time per loop: 0.12 seconds
+
+
+* KMeans with random initialization:
+    - Number of centroids: 4
+    - Inertia:
+        -> Best:
+        -> Mean:
+        -> Std:
+    - Cluster distribution:
+        -> 0    0.260125
+        -> 1    0.272875
+        -> 2    0.241964
+        -> 3    0.225035
+    - Cluster centroids:
+        -> [0.40056938, 0.46591199, 0.51731626, 0.71024566, 0.79046867, 0.60288033, 0.38470315]
+        -> [0.50756911, 0.59054749, 0.53641467, 0.77261956, 0.17287056, 0.66359867, 0.68785755]
+        -> [0.48189789, 0.33995126, 0.43707285, 0.27524772, 0.86001299, 0.41211561, 0.20664926]
+        -> [0.56921245, 0.61023709, 0.55525329, 0.36677321, 0.12755378, 0.51232961, 0.6765232 ]
+    - Total time of execution: 122.50 seconds
+    - Time per loop: 0.12 seconds
+
 
 * GAs:
