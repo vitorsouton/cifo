@@ -13,7 +13,7 @@ from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
 from ..selection.selection import tournament_sel
-from ..crossover.crossover import single_coordinate_crossover
+from ..crossover.crossover import single_centroid_crossover
 from ..mutation.mutation import coordinate_mutation
 from time import time
 
@@ -28,6 +28,7 @@ class Individual:
         self.labels = None
         self.data = data
         self.fitness = self.get_fitness()
+        self.shape = self.representation.shape
 
     def get_fitness(self):
         dist = DistanceMetric.get_metric('minkowski')
@@ -172,6 +173,6 @@ if __name__ == '__main__':
     pop.evolve(
         generations=100, xo_prob=0.9,
         mut_prob=0.05, selection=tournament_sel,
-        xo=single_coordinate_crossover, mutate=coordinate_mutation,
+        xo=single_centroid_crossover, mutate=coordinate_mutation,
         elitism=True, stopping_criteria=10
     )
