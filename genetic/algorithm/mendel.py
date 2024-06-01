@@ -12,9 +12,6 @@ from random import random
 from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
-from ..selection.selection import tournament_sel
-from ..crossover.crossover import single_coordinate_crossover
-from ..mutation.mutation import coordinate_mutation
 from time import time
 
 
@@ -26,15 +23,19 @@ class Individual:
             self.representation = representation
 
         self.labels = None
+        self.distances = None
         self.data = data
         self.fitness = self.get_fitness()
+        self.shape = self.representation.shape
 
     def get_fitness(self):
-        dist = DistanceMetric.get_metric('minkowski')
-        distances = dist.pairwise(self.data, self.representation) # To all centroids
-        self.labels = np.argmin(distances, axis=1) # Labels
+        dist = DistanceMetric.get_metric('euclidean')
+        self.distances = dist.pairwise(self.data, self.representation) # To all centroids
+        self.labels = np.argmin(self.distances, axis=1) # Labels
         # Distance to label centroids
-        fitness = np.min(distances, axis=1).sum() # INERTIA!
+
+        dists = np.square(self.distances)
+        fitness = np.min(dists, axis=1).sum() # INERTIA!
         return fitness
 
         #TODO: If we have time, try to implement different fitness functions
@@ -66,6 +67,8 @@ class Population:
         self.individuals = []
         self.data = self.get_data()
         self.loop_time = []
+        self.best = None
+        self.history = []
 
 
         for _ in range(size):
@@ -73,33 +76,38 @@ class Population:
                 self.individual_type(
                     n_dim=kwargs['n_dim'],
                     n_centroids=kwargs['n_centroids'],
+                    representation=kwargs.get('representation', None),
                     data=self.data
                 )
             )
 
-    def log_time(func):
+
+    def log(func):
         def wrapper(self, *args, **kwargs):
             start_time = time()
             func(self, *args, **kwargs)
             end_time = time() - start_time
             print(f'Total time of execution: {end_time:.2f} seconds.')
             print(f'Average time per generation: {np.mean(self.loop_time): .2f} seconds.')
+            print(f'History of fitness: {self.history[:5]}')
         return wrapper
 
-    @log_time
+
+    @log
     def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism, stopping_criteria):
         if self.optim == 'max':
-            best = max(self.individuals, key=attrgetter('fitness'))
+            self.best = max(self.individuals, key=attrgetter('fitness'))
         elif self.optim == 'min':
-            best = min(self.individuals, key=attrgetter('fitness'))
+            self.best = min(self.individuals, key=attrgetter('fitness'))
 
-        print(f'Initial fitness: {best}')
+        print(f'Initial fitness: {self.best}')
         early_stopping = stopping_criteria # Patience for breaking condition
 
         for g in range(generations):
             loop_time_start = time()
 
             new_pop = []
+            self.history.append(self.best.fitness)
 
             if elitism:
                 if self.optim == "max":
@@ -115,25 +123,35 @@ class Population:
 
                 # Crossover step
                 if random() < xo_prob:
-                    off1, off2 = xo(parent1, parent2)
+                    offs = xo(parent1, parent2)
                 else:
-                    off1, off2 = parent1, parent2
+                    offs = (parent1, parent2)
+
+
+                # Check for single xo offspring or multi
+                if isinstance(offs, tuple):
+                    off1, off2 = offs
+                else:
+                    off1 = offs
+                    off2 = None
 
                 # Mutation step
                 if random() < mut_prob:
                     off1 = mutate(off1)
-                if random() < mut_prob:
-                    off2 = mutate(off2)
+                if off2 is not None:
+                    if random() < mut_prob:
+                        off2 = mutate(off2)
 
                 new_pop.append(self.individual_type(representation=off1, data=self.data))
-                if len(new_pop) < self.size:
+                if len(new_pop) < self.size and off2 is not None:
                     new_pop.append(self.individual_type(representation=off2, data=self.data))
 
             self.individuals = new_pop
 
             best_ind_generation = min(self, key=attrgetter("fitness"))
-            if best_ind_generation < best:
-                best = best_ind_generation
+
+            if best_ind_generation < self.best:
+                self.best = best_ind_generation
                 early_stopping = stopping_criteria
             else:
                 early_stopping -= 1
@@ -142,7 +160,7 @@ class Population:
             self.loop_time.append(loop_time_end)
 
             if early_stopping == 0:
-                cprint(f'Stop improving after {g} generations.', 'red')
+                cprint(f'Stop improving after {g-stopping_criteria+1} generations.', 'red')
                 break
 
         cprint(f'Best solution found: {min(self, key=attrgetter("fitness"))}', 'green')
@@ -161,17 +179,3 @@ class Population:
 
     def __getitem__(self, idx):
         return self.individuals[idx]
-
-
-if __name__ == '__main__':
-    pop = Population(
-        size=100, optim='min', individual_type=Individual,
-        n_dim=7, n_centroids=4
-    )
-
-    pop.evolve(
-        generations=100, xo_prob=0.9,
-        mut_prob=0.05, selection=tournament_sel,
-        xo=single_coordinate_crossover, mutate=coordinate_mutation,
-        elitism=True, stopping_criteria=10
-    )
