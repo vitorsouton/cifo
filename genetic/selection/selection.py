@@ -8,3 +8,13 @@ def tournament_sel(population, tour_size=5):
 
     if population.optim == 'min':
         return min(tournament, key=attrgetter('fitness'))
+
+
+# Roulette wheel
+
+
+# Elitist selection
+'''
+Only select best individuals of the population.
+Sort for best fitness and select only them.
+'''
