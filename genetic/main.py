@@ -11,6 +11,7 @@ from .algorithm.mendel import Individual, Population
 
 from termcolor import cprint
 from datetime import datetime
+from multiprocessing import Process
 
 
 log_dict = {}
@@ -38,6 +39,16 @@ def log(func):
     return wrapper
 
 
+def parallel_evolve(pops, **kwargs):
+    procs = []
+    for pop in pops:
+        proc = Process(target=evolve, args=(pop,), kwargs=kwargs)
+        procs.append(proc)
+        proc.start()
+
+    for p in procs:
+        p.join()
+
 @log
 def evolve(pop, **kwargs):
     pop.evolve(**kwargs)
@@ -54,32 +65,38 @@ if __name__ == '__main__':
 
         # Run every possible combination of algorithms
         n_combs = len(list(itertools.product(*combs)))
+
+        # Multiprocess it, maybe?
+        comb_procs = []
         for comb in itertools.product(*combs):
-            cprint(f'Combinations to go: {n_combs}', 'red')
 
             # Unpacking the functions
             selection, xo, mutation = comb
 
-            for ini in range(1, 31):
-                cprint(f'Internal loop: {ini}/30.\n', 'yellow')
-                # Initialize new population, otherwise we start from last one
-                pop = Population(
-                    size=50, optim='min', individual_type=Individual,
-                    n_dim=7, n_centroids=4
-                    )
+            # Generate list of Population with desired n of runs
+            pops = [Population(size=50, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
+                for _ in range(3)]
 
-                # The actual evolving steps, separated in a function to log it
-                evolve(pop,
-                    generations=50, xo_prob=0.9,
-                    mut_prob=0.1, selection=selection,
-                    xo=xo, mutate=mutation,
-                    elitism=True, stopping_criteria=15
-                )
+            # Create dictionary for kwargs
+            evolve_params = {
+                'generations': 50, 'xo_prob': 0.9,
+                'mut_prob': 0.1, 'selection': selection,
+                'xo': xo, 'mutate': mutation,
+                'elitism': True, 'stopping_criteria':  15
+            }
+
+            # Multiprocessing, hopefully
+            proc = Process(target=parallel_evolve, args=(pops,), kwargs=evolve_params)
+            comb_procs.append(proc)
+            proc.start()
+
+        for p in comb_procs:
+            p.join()
 
             n_combs -= 1
 
         ft = time.time() - st
-        print(f'Total time:{ft} sec.')
+        cprint(f'Total time:{ft} sec.', 'red')
 
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
