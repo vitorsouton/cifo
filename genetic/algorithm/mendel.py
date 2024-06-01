@@ -12,8 +12,8 @@ from random import random
 from copy import copy
 from termcolor import cprint
 from sklearn.metrics import DistanceMetric
-from ..selection.selection import tournament_sel
-# from ..crossover.crossover import single_centroid_crossover
+from ..selection.selection import tournament_sel, elitist_selector
+from ..crossover.crossover import single_centroid_crossover, pairwise_nearest_neighbor_crossover
 from ..mutation.mutation import coordinate_mutation
 from time import time
 
@@ -117,18 +117,26 @@ class Population:
 
                 # Crossover step
                 if random() < xo_prob:
-                    off1, off2 = xo(parent1, parent2)
+                    offs = xo(parent1, parent2)
                 else:
                     off1, off2 = parent1, parent2
+
+                # Check for single xo offspring or multi
+                if isinstance(offs, tuple):
+                    off1, off2 = offs
+                else:
+                    off1 = offs
+                    off2 = None
 
                 # Mutation step
                 if random() < mut_prob:
                     off1 = mutate(off1)
-                if random() < mut_prob:
-                    off2 = mutate(off2)
+                if off2 is not None:
+                    if random() < mut_prob:
+                        off2 = mutate(off2)
 
                 new_pop.append(self.individual_type(representation=off1, data=self.data))
-                if len(new_pop) < self.size:
+                if len(new_pop) < self.size and off2 is not None:
                     new_pop.append(self.individual_type(representation=off2, data=self.data))
 
             self.individuals = new_pop
@@ -167,13 +175,13 @@ class Population:
 
 if __name__ == '__main__':
     pop = Population(
-        size=100, optim='min', individual_type=Individual,
+        size=25, optim='min', individual_type=Individual,
         n_dim=7, n_centroids=4
     )
 
     pop.evolve(
-        generations=100, xo_prob=0.9,
-        mut_prob=0.05, selection=tournament_sel,
-        xo=single_centroid_crossover, mutate=coordinate_mutation,
+        generations=50, xo_prob=0.9,
+        mut_prob=0.05, selection=elitist_selector,
+        xo=pairwise_nearest_neighbor_crossover, mutate=coordinate_mutation,
         elitism=True, stopping_criteria=10
     )
