@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..utils import generate_mocking_data
-from ..algorithm.mendel import Individual
+# from ..algorithm.mendel import Individual
 from sklearn.metrics import DistanceMetric
 
 def single_centroid_crossover(p1, p2):
@@ -16,7 +16,7 @@ def single_centroid_crossover(p1, p2):
     return o1, o2
 
 
-def PNN(p1, p2):
+def pairwise_nearest_neighbor_crossover(p1, p2):
     '''
     - Cross solutions:
         => Needs centroids (p1, p2) and partitions (part1, part2)
@@ -113,4 +113,4 @@ if __name__ == '__main__':
     p1 = Individual(data=data, n_dim=2, n_centroids=3)
     p2 = Individual(data=data, n_dim=2, n_centroids=3)
 
-    print(PNN(p1, p2))
+    print(pairwise_nearest_neighbor_crossover(p1, p2))

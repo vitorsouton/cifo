@@ -14,7 +14,10 @@ def tournament_sel(population, tour_size=5):
 
 
 # Elitist selection
-'''
-Only select best individuals of the population.
-Sort for best fitness and select only them.
-'''
+def elitist_selector(population, pool_size=5):
+    '''
+    Only select best individuals of the population.
+    Sort for best fitness and select randomly among them.
+    '''
+    elites = sorted(population, key=attrgetter('fitness'))[:pool_size]
+    return choice(elites)
