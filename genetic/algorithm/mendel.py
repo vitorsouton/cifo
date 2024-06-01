@@ -82,18 +82,6 @@ class Population:
             )
 
 
-    def log(func):
-        def wrapper(self, *args, **kwargs):
-            start_time = time()
-            func(self, *args, **kwargs)
-            end_time = time() - start_time
-            print(f'Total time of execution: {end_time:.2f} seconds.')
-            print(f'Average time per generation: {np.mean(self.loop_time): .2f} seconds.')
-            print(f'History of fitness: {self.history[:5]}')
-        return wrapper
-
-
-    @log
     def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism, stopping_criteria):
         if self.optim == 'max':
             self.best = max(self.individuals, key=attrgetter('fitness'))
@@ -164,11 +152,14 @@ class Population:
                 break
 
         cprint(f'Best solution found: {min(self, key=attrgetter("fitness"))}', 'green')
+        return self.loop_time, self.best
+
 
     def get_data(self):
         path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
         data = pd.read_csv(path)
         return data
+
 
 
     def __repr__(self):

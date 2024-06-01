@@ -42,7 +42,7 @@ def pairwise_crossover(p1, p2):
         cnew = _merge_closest_centroids(cnew, dists)
 
         # Get new distances with merged centroids
-        pnew = _get_new_distances(cnew, p1, p2)
+        pnew = _get_new_distances(cnew, p1)
 
     return cnew
 
@@ -136,7 +136,7 @@ def _get_new_distances(cnew, p1):
 
 def _adjust_centroids(cnew, p1):
     n_clusters = cnew.shape[0]
-    kmeans = KMeans(n_clusters, init=cnew, max_iter=2) # 2 iters are enough, according to Franti
+    kmeans = KMeans(n_clusters, init=cnew, n_init=1, max_iter=2) # 2 iters are enough, according to Franti
     kmeans.fit(p1.data)
     return kmeans.cluster_centers_
 
