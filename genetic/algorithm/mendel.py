@@ -68,6 +68,7 @@ class Population:
         self.data = self.get_data()
         self.loop_time = []
         self.best = None
+        self.history = []
 
 
         for _ in range(size):
@@ -80,16 +81,19 @@ class Population:
                 )
             )
 
-    def log_time(func):
+
+    def log(func):
         def wrapper(self, *args, **kwargs):
             start_time = time()
             func(self, *args, **kwargs)
             end_time = time() - start_time
             print(f'Total time of execution: {end_time:.2f} seconds.')
             print(f'Average time per generation: {np.mean(self.loop_time): .2f} seconds.')
+            print(f'History of fitness: {self.history[:5]}')
         return wrapper
 
-    @log_time
+
+    @log
     def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism, stopping_criteria):
         if self.optim == 'max':
             self.best = max(self.individuals, key=attrgetter('fitness'))
@@ -103,6 +107,7 @@ class Population:
             loop_time_start = time()
 
             new_pop = []
+            self.history.append(self.best.fitness)
 
             if elitism:
                 if self.optim == "max":
@@ -144,6 +149,7 @@ class Population:
             self.individuals = new_pop
 
             best_ind_generation = min(self, key=attrgetter("fitness"))
+
             if best_ind_generation < self.best:
                 self.best = best_ind_generation
                 early_stopping = stopping_criteria
@@ -154,7 +160,7 @@ class Population:
             self.loop_time.append(loop_time_end)
 
             if early_stopping == 0:
-                cprint(f'Stop improving after {g-stopping_criteria} generations.', 'red')
+                cprint(f'Stop improving after {g-stopping_criteria+1} generations.', 'red')
                 break
 
         cprint(f'Best solution found: {min(self, key=attrgetter("fitness"))}', 'green')
