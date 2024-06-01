@@ -3,3 +3,7 @@
 raw_data/
 .ipynb_checkpoints/
 __pycache__/
+Scripts/
+Lib/
+pyvenv.cfg
+.gitignore
