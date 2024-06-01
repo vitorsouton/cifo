@@ -5,4 +5,7 @@ test_xo:
 	@python -m genetic.crossover.crossover
 
 run_ga:
-	@python -m genetic.main
+	@python -m genetic.main run
+
+run_preliminary:
+	@python -m genetic.main preliminary
