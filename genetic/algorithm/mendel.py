@@ -88,7 +88,7 @@ class Population:
         elif self.optim == 'min':
             self.best = min(self.individuals, key=attrgetter('fitness'))
 
-        print(f'Initial fitness: {self.best}')
+        cprint(f'Initial fitness: {self.best.fitness}', 'blue')
         early_stopping = stopping_criteria # Patience for breaking condition
 
         for g in range(generations):
@@ -151,7 +151,7 @@ class Population:
                 cprint(f'Stop improving after {g-stopping_criteria+1} generations.', 'red')
                 break
 
-        cprint(f'Best solution found: {min(self, key=attrgetter("fitness"))}', 'green')
+        cprint(f'Best solution found: {min(self, key=attrgetter("fitness")).fitness}\n', 'green')
         return self.loop_time, self.best
 
 
