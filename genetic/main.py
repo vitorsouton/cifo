@@ -86,14 +86,14 @@ if __name__ == '__main__':
 
             # Generate list of Population with desired n of runs
             pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=4)\
-                for _ in range(7)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
+                for _ in range(5)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
 
             # Create dictionary for kwargs
             evolve_params = {
-                'generations': 75, 'xo_prob': 0.9,
+                'generations': 75, 'xo_prob': 0.95,
                 'mut_prob': 0.1, 'selection': selection,
                 'xo': xo, 'mutate': mutation,
-                'elitism': True, 'stopping_criteria':  15
+                'elitism': True, 'stopping_criteria': 10
             }
 
             parallel_evolve(pops, **evolve_params)
@@ -110,15 +110,16 @@ if __name__ == '__main__':
             pickle.dump(log_dict, f)
 
     if sys.argv[1] == 'run':
-        st = time.time()
 
-        # 350 loops * 5 population inits == 350 runs
-        for _ in range(350):
+        # 10 loops * 5 population inits == 50 runs
+        for l in range(1, 11):
+            cprint(f'Starting loop {l}\n', 'yellow')
+            st = time.time()
 
             # Should be enough to do some inference...
             pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=4)\
                     for _ in range(5)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
-                                    # Although after 5~7, using PNN, the threads are consumed
+                                       # Although after 5~7, using PNN, the threads are consumed
 
             # Best Algorithms
             selection = elitist_selector
@@ -127,10 +128,10 @@ if __name__ == '__main__':
 
             # Create dictionary for kwargs
             evolve_params = {
-                'generations': 75, 'xo_prob': 0.9,
+                'generations': 75, 'xo_prob': 0.95,
                 'mut_prob': 0.1, 'selection': selection,
                 'xo': xo, 'mutate': mutation,
-                'elitism': True, 'stopping_criteria': 15
+                'elitism': True, 'stopping_criteria': 10
             }
 
             parallel_evolve(pops, **evolve_params)
