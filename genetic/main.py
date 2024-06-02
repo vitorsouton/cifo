@@ -61,7 +61,7 @@ def evolve(pop, **kwargs):
 
     log_dict['time'].append(end_time)
     log_dict['loop_time'].append(loop_time)
-    log_dict['best'].append(best)
+    log_dict['best'].append(best.representation)
     log_dict['selection'].append(kwargs['selection'].__name__)
     log_dict['xo'].append(kwargs['xo'].__name__)
     log_dict['mutation'].append(kwargs['mutate'].__name__)
@@ -79,17 +79,18 @@ if __name__ == '__main__':
         # Run every possible combination of algorithms
         n_combs = len(list(itertools.product(*combs)))
 
+
         for comb in itertools.product(*combs):
             # Unpacking the functions
             selection, xo, mutation = comb
 
             # Generate list of Population with desired n of runs
-            pops = [Population(size=50, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
-                for _ in range(15)] # For 32 cpu cores / 32gb RAM, running safely
+            pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
+                for _ in range(7)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
 
             # Create dictionary for kwargs
             evolve_params = {
-                'generations': 50, 'xo_prob': 0.9,
+                'generations': 75, 'xo_prob': 0.9,
                 'mut_prob': 0.1, 'selection': selection,
                 'xo': xo, 'mutate': mutation,
                 'elitism': True, 'stopping_criteria':  15
@@ -103,7 +104,7 @@ if __name__ == '__main__':
 
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
-        with open(f'data/logs/{dt_string}.pkl', 'wb') as f:
+        with open(f'data/logs/{dt_string}--ALGO-SELECTION.pkl', 'wb') as f:
             for k, v in log_dict.items():
                 log_dict[k] = list(v)
             pickle.dump(log_dict, f)
