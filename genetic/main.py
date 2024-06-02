@@ -18,28 +18,6 @@ log_dict = {'time': multiprocessing.Manager().list(), 'loop_time': multiprocessi
             'xo': multiprocessing.Manager().list(), 'mutation': multiprocessing.Manager().list()
             }
 
-def log(func):
-    def wrapper(self, *args, **kwargs):
-        start_time = time.time()
-        func(self, *args, **kwargs)
-        end_time = time.time() - start_time
-        if isinstance(log_dict, dict):
-            if len(log_dict) == 0:
-                log_dict['time'] = []
-                log_dict['loop_time'] = []
-                log_dict['best'] = []
-                log_dict['selection'] = []
-                log_dict['xo'] = []
-                log_dict['mutation'] = []
-
-            log_dict['time'].append(end_time)
-            log_dict['loop_time'].append(self.loop_time)
-            log_dict['best'].append(self.best)
-            log_dict['selection'].append(kwargs['selection'].__name__)
-            log_dict['xo'].append(kwargs['xo'].__name__)
-            log_dict['mutation'].append(kwargs['mutate'].__name__)
-        return None
-    return wrapper
 
 
 def parallel_evolve(pops, **kwargs):
@@ -103,7 +81,7 @@ if __name__ == '__main__':
         cprint(f'Total time: {ft} sec.', 'red')
 
         now = datetime.now()
-        dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
+        dt_string = now.strftime("%d-%m-%Y--%H-%M-%S")
         with open(f'data/logs/{dt_string}--ALGO_SELECTION.pkl', 'wb') as f:
             for k, v in log_dict.items():
                 log_dict[k] = list(v)
@@ -140,7 +118,7 @@ if __name__ == '__main__':
             cprint(f'Total time: {ft:.2f} sec.', 'red')
 
         now = datetime.now()
-        dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
+        dt_string = now.strftime("%d-%m-%Y--%H-%M-%S")
         with open(f'data/logs/{dt_string}--FULL_RUN.pkl', 'wb') as f:
             for k, v in log_dict.items():
                 log_dict[k] = list(v)

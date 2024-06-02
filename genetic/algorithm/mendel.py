@@ -18,6 +18,7 @@ from time import time
 class Individual:
     def __init__(self, data, n_dim=7, n_centroids=4, representation=None):
         if representation is None:
+            # [[], [], [], []]
             self.representation = np.array([np.random.uniform(0, 1, n_dim) for _ in range(n_centroids)])
         else:
             self.representation = representation
