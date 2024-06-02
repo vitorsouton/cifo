@@ -2,7 +2,7 @@ import time
 import sys
 import itertools
 import pickle
-
+import multiprocessing
 
 from .selection.selection import tournament_sel, elitist_selector, roulette_wheel_selector
 from .crossover.crossover import single_centroid_crossover, pairwise_crossover, PNN
@@ -11,10 +11,12 @@ from .algorithm.mendel import Individual, Population
 
 from termcolor import cprint
 from datetime import datetime
-from multiprocessing import Process
 
 
-log_dict = {}
+log_dict = {'time': multiprocessing.Manager().list(), 'loop_time': multiprocessing.Manager().list(),
+            'best': multiprocessing.Manager().list(), 'selection': multiprocessing.Manager().list(),
+            'xo': multiprocessing.Manager().list(), 'mutation': multiprocessing.Manager().list()
+            }
 
 def log(func):
     def wrapper(self, *args, **kwargs):
@@ -36,22 +38,33 @@ def log(func):
             log_dict['selection'].append(kwargs['selection'].__name__)
             log_dict['xo'].append(kwargs['xo'].__name__)
             log_dict['mutation'].append(kwargs['mutate'].__name__)
+        return None
     return wrapper
 
 
 def parallel_evolve(pops, **kwargs):
     procs = []
     for pop in pops:
-        proc = Process(target=evolve, args=(pop,), kwargs=kwargs)
+        proc = multiprocessing.Process(target=evolve, args=(pop,), kwargs=kwargs)
         procs.append(proc)
         proc.start()
 
     for p in procs:
         p.join()
 
-@log
+
+
 def evolve(pop, **kwargs):
-    pop.evolve(**kwargs)
+    start_time = time.time()
+    loop_time, best = pop.evolve(**kwargs)
+    end_time = time.time() - start_time
+
+    log_dict['time'].append(end_time)
+    log_dict['loop_time'].append(loop_time)
+    log_dict['best'].append(best.representation)
+    log_dict['selection'].append(kwargs['selection'].__name__)
+    log_dict['xo'].append(kwargs['xo'].__name__)
+    log_dict['mutation'].append(kwargs['mutate'].__name__)
 
 
 if __name__ == '__main__':
@@ -66,41 +79,34 @@ if __name__ == '__main__':
         # Run every possible combination of algorithms
         n_combs = len(list(itertools.product(*combs)))
 
-        # Multiprocess it, maybe?
-        comb_procs = []
-        for comb in itertools.product(*combs):
 
+        for comb in itertools.product(*combs):
             # Unpacking the functions
             selection, xo, mutation = comb
 
             # Generate list of Population with desired n of runs
-            pops = [Population(size=50, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
-                for _ in range(3)]
+            pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
+                for _ in range(7)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
 
             # Create dictionary for kwargs
             evolve_params = {
-                'generations': 50, 'xo_prob': 0.9,
+                'generations': 75, 'xo_prob': 0.9,
                 'mut_prob': 0.1, 'selection': selection,
                 'xo': xo, 'mutate': mutation,
                 'elitism': True, 'stopping_criteria':  15
             }
 
-            # Multiprocessing, hopefully
-            proc = Process(target=parallel_evolve, args=(pops,), kwargs=evolve_params)
-            comb_procs.append(proc)
-            proc.start()
+            parallel_evolve(pops, **evolve_params)
 
-        for p in comb_procs:
-            p.join()
-
-            n_combs -= 1
 
         ft = time.time() - st
-        cprint(f'Total time:{ft} sec.', 'red')
+        cprint(f'Total time: {ft} sec.', 'red')
 
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
-        with open(f'../data/logs/{dt_string}.pkl', 'wb') as f:
+        with open(f'data/logs/{dt_string}--ALGO-SELECTION.pkl', 'wb') as f:
+            for k, v in log_dict.items():
+                log_dict[k] = list(v)
             pickle.dump(log_dict, f)
 
     if sys.argv[1] == 'run':
