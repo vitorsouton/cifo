@@ -85,7 +85,7 @@ if __name__ == '__main__':
             selection, xo, mutation = comb
 
             # Generate list of Population with desired n of runs
-            pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=5)\
+            pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=4)\
                 for _ in range(7)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
 
             # Create dictionary for kwargs
@@ -104,10 +104,43 @@ if __name__ == '__main__':
 
         now = datetime.now()
         dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
-        with open(f'data/logs/{dt_string}--ALGO-SELECTION.pkl', 'wb') as f:
+        with open(f'data/logs/{dt_string}--ALGO_SELECTION.pkl', 'wb') as f:
             for k, v in log_dict.items():
                 log_dict[k] = list(v)
             pickle.dump(log_dict, f)
 
     if sys.argv[1] == 'run':
-        print('TO IMPLEMENT')
+        st = time.time()
+
+        # 350 loops * 5 population inits == 350 runs
+        for _ in range(350):
+
+            # Should be enough to do some inference...
+            pops = [Population(size=35, optim='min', individual_type=Individual, n_dim=7, n_centroids=4)\
+                    for _ in range(5)] # For 32 cpu cores / 32gb RAM, running safely on 12~15 parallel jobs
+                                    # Although after 5~7, using PNN, the threads are consumed
+
+            # Best Algorithms
+            selection = elitist_selector
+            xo = PNN
+            mutation = random_swap_mutation
+
+            # Create dictionary for kwargs
+            evolve_params = {
+                'generations': 75, 'xo_prob': 0.9,
+                'mut_prob': 0.1, 'selection': selection,
+                'xo': xo, 'mutate': mutation,
+                'elitism': True, 'stopping_criteria': 15
+            }
+
+            parallel_evolve(pops, **evolve_params)
+
+            ft = time.time() - st
+            cprint(f'Total time: {ft:.2f} sec.', 'red')
+
+        now = datetime.now()
+        dt_string = now.strftime("%d-%m-%Y--%H:%M:%S")
+        with open(f'data/logs/{dt_string}--FULL_RUN.pkl', 'wb') as f:
+            for k, v in log_dict.items():
+                log_dict[k] = list(v)
+            pickle.dump(log_dict, f)
