@@ -1,7 +1,7 @@
 '''
 In this python script is where the magic happens.
 
-There are 2 main ways to run it "preliminary" and "run", passed as arguments in the
+There are 2 main modes to run it: "preliminary" and "run", passed as arguments in the
     terminal.
 
 The "preliminary" tests all the 18 possible combinations of selection, xo and mutation
