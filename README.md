@@ -15,7 +15,7 @@ We choose to use the [Spotify dataset on Kaggle](https://www.kaggle.com/datasets
 * The logic to run the algorithm (in parallel, by the way) can be find [here](genetic/main.py)
 * The notebook with the final analysis and cool graphics can be find [here](notebooks/final_findings.ipynb)
 * The complete log of our best results can be find [here](results.txt)
-* Finally, the final report can be find [here](about:blank)
+* Finally, the final report can be find [here](cifo_report.pdf)
 
 ---
 # Final results
