@@ -36,7 +36,7 @@ class Individual:
 
     def get_fitness(self):
         '''
-        In the beggining, the fitness function was KMeans Inertia in order to readily compare
+        In the begining, the fitness function was KMeans Inertia in order to readily compare
             the GA to KMeans. In the current iteration, we decided to penalize representations
             that have that are too dispersed.
         For that, we decided to use the Calinski-Harabasz score, that measures  the ratio of
