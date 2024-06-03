@@ -65,3 +65,25 @@
         -> Total: 3242.50 seconds
         -> Per loop: 19.64 seconds
         -> Std per loop: 6.30 seconds
+
+
+* GA with PNN xo, swap mutation, elitist selection, new fitness:
+    - Number of centroids: 3 (centroids 2 and 3 are the same)
+    - Inertia:
+        -> Best: 24512.87
+        -> Mean: 24594.52
+        -> Std:  46.51
+    - Cluster distribution:
+        -> 0    0.273498
+        -> 1    0.260625
+        -> 2    0.242122
+        -> 3    0.223756
+    - Cluster centroids:
+        -> [0.57043338, 0.60954145, 0.5551824 , 0.3596791 , 0.12693881, 0.51070642, 0.67459688]
+        -> [0.5095549 , 0.5940657 , 0.53787377, 0.76836387, 0.16362234, 0.66130682, 0.6943178 ]
+        -> [0.48235228, 0.34163122, 0.43767504, 0.27302969, 0.86159038, 0.40760757, 0.20732386]
+        -> [0.48235228, 0.34163122, 0.43767504, 0.27302969, 0.86159038, 0.40760757, 0.20732386]
+    - Time of execution:
+        -> Total: 4069.54 seconds
+        -> Per loop: 25.51 seconds
+        -> Std per loop: 8.41 seconds
