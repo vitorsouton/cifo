@@ -11,14 +11,18 @@ from operator import attrgetter
 from random import random
 from copy import copy
 from termcolor import cprint
-from sklearn.metrics import DistanceMetric
+from sklearn.metrics import DistanceMetric, calinski_harabasz_score
 from time import time
 
 
 class Individual:
+    '''
+    The Individual class is mostly unchanged from the labs' charles module.
+    The relevant changes will be commented in the code.
+    '''
     def __init__(self, data, n_dim=7, n_centroids=4, representation=None):
         if representation is None:
-            # [[], [], [], []]
+            # The representation consists of an numpy array of shape (n_centroids, n_dimensions).
             self.representation = np.array([np.random.uniform(0, 1, n_dim) for _ in range(n_centroids)])
         else:
             self.representation = representation
@@ -26,25 +30,47 @@ class Individual:
         self.labels = None
         self.distances = None
         self.data = data
+        self.inertia = self.get_inertia()
         self.fitness = self.get_fitness()
         self.shape = self.representation.shape
 
     def get_fitness(self):
+        '''
+        In the beggining, the fitness function was KMeans Inertia in order to readily compare
+            the GA to KMeans. In the current iteration, we decided to penalize representations
+            that have that are too dispersed.
+        For that, we decided to use the Calinski-Harabasz score, that measures  the ratio of
+            the within-cluster variance to the between-cluster variance.
+        '''
+
+        # Add penalty to fitness. The magnitude of ch_score is higher than the inertia itself
+        #   and has exponential character. To solve it, we took the ln of the score and
+        #   divided the fitness. Higher scores will give lower fitness.
+        ch_score = calinski_harabasz_score(self.data, self.labels)
+
+        fitness = self.inertia
+        fitness /= np.log(ch_score)
+
+
+        return fitness
+
+
+    def get_inertia(self):
+        '''
+        Formula: sum(||point - centroid||)**2
+        '''
         dist = DistanceMetric.get_metric('euclidean')
         self.distances = dist.pairwise(self.data, self.representation) # To all centroids
         self.labels = np.argmin(self.distances, axis=1) # Labels
+
         # Distance to label centroids
-
         dists = np.square(self.distances)
-        fitness = np.min(dists, axis=1).sum() # INERTIA!
-        return fitness
-
-        #TODO: If we have time, try to implement different fitness functions
-        #      to try and make GA better than KNN
+        inertia = np.min(dists, axis=1).sum() # INERTIA!
+        return inertia
 
 
     def __repr__(self):
-        return f'Fitness: {self.fitness}'
+        return f'Fitness: {self.fitness}; Inertia {self.inertia}'
 
     def __len__(self):
         return len(self.representation)
@@ -61,12 +87,17 @@ class Individual:
 
 
 class Population:
+    '''
+    The main difference from the charles module from the lab is that the individual
+        class is passed as an argument to the init and each one of them is initialized
+        with the Population definition.
+    '''
     def __init__(self, size, optim, individual_type, **kwargs):
         self.size = size
         self.optim = optim
         self.individual_type = individual_type
         self.individuals = []
-        self.data = self.get_data()
+        self.data = self.get_data() # Loads the .csv needed to calculate the fitness
         self.loop_time = []
         self.best = None
         self.history = []
@@ -84,13 +115,20 @@ class Population:
 
 
     def evolve(self, generations, xo_prob, mut_prob, selection, xo, mutate, elitism, stopping_criteria):
+        '''
+        The algorithm responsible for the evolution. A few changes were made from the
+            lab's charles module and, other than the prints for logs, will be point out.
+        '''
         if self.optim == 'max':
             self.best = max(self.individuals, key=attrgetter('fitness'))
         elif self.optim == 'min':
             self.best = min(self.individuals, key=attrgetter('fitness'))
 
-        cprint(f'Initial fitness: {self.best.fitness}', 'blue')
-        early_stopping = stopping_criteria # Patience for breaking condition
+        cprint(f'Initial: {self.best}', 'blue')
+
+        # We decided to create an "early stopping" logic in order to cut short runs that
+        #   got stuck in local minima and were not improving.
+        early_stopping = stopping_criteria
 
         for g in range(generations):
             loop_time_start = time()
@@ -116,8 +154,8 @@ class Population:
                 else:
                     offs = (parent1, parent2)
 
-
-                # Check for single xo offspring or multi
+                # Some of the crossover algorithms returned only 1 offspring.
+                #   Therefore, we had to account for it in this step.
                 if isinstance(offs, tuple):
                     off1, off2 = offs
                 else:
@@ -137,30 +175,38 @@ class Population:
 
             self.individuals = new_pop
 
+            # Early stopping check
+            # The logic is simple:
+            # Record best individual of the generation
             best_ind_generation = min(self, key=attrgetter("fitness"))
-
+            # If the best individual of the generation is better than the elite,
+            #   we assign it as the new elite and reset the counter.
             if best_ind_generation < self.best:
                 self.best = best_ind_generation
                 early_stopping = stopping_criteria
+            # Else, we decrement the countdown.
             else:
                 early_stopping -= 1
 
             loop_time_end = time() - loop_time_start
             self.loop_time.append(loop_time_end)
 
+            # If the coountdown reaches 0, the evolution stops.
             if early_stopping == 0:
                 cprint(f'Stop improving after {g-stopping_criteria+1} generations.', 'red')
                 break
 
-        cprint(f'Best solution found: {min(self, key=attrgetter("fitness")).fitness}\n', 'green')
+        cprint(f'Best solution found: {self.best}\n', 'green')
         return self.loop_time, self.best
 
 
     def get_data(self):
+        '''
+        Simple function to load the data needed to calculate the fitness.
+        '''
         path = os.path.join(os.path.abspath(os.path.curdir), 'data', 'clean_data', 'clean_data.csv')
         data = pd.read_csv(path)
         return data
-
 
 
     def __repr__(self):
